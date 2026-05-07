@@ -11,6 +11,7 @@ class AddProductScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     if (product != null) controller.setEditData(product!);
 
     return Scaffold(
