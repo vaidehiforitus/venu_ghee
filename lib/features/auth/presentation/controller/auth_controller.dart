@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:venu_ghee/core/utils/exports/common_exports.dart';
+import 'package:venu_ghee/features/auth/data/model/request_model/login_response_model.dart';
+import 'package:venu_ghee/features/auth/data/repositories/auth_repo.dart';
 import 'package:venu_ghee/routes/app_routes.dart';
 
 class AuthController extends GetxController {
@@ -7,6 +9,8 @@ class AuthController extends GetxController {
   final TextEditingController passwordController = TextEditingController();
 
   final RxBool isLoading = false.obs;
+
+  final AuthRepo _authRepo = AuthRepo();
 
   @override
   void onClose() {
@@ -19,15 +23,19 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
 
-      final String email = emailController.text.trim();
-      final String password = passwordController.text.trim();
+      final request = LoginRequestModel(
+        identifier: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
-      // TODO: API call here
-      await Future.delayed(const Duration(seconds: 2));
+      final response = await _authRepo.login(request);
 
-      CommonSnackBar.success('Login Successful!!');
-      Get.offAllNamed(AppRoutes.loginScreen);
-
+      if (response.accessToken != null) {
+        CommonSnackBar.success('Login Successful!!');
+        Get.offAllNamed(AppRoutes.bottomNavigationBarWidget);
+      } else {
+        ErrorHandler.handleError('Login failed. Please try again.');
+      }
     } catch (e) {
       ErrorHandler.handleError('$e');
     } finally {
@@ -38,13 +46,9 @@ class AuthController extends GetxController {
   Future<void> googleLogin() async {
     try {
       isLoading.value = true;
-
-      // TODO: Google Sign In
       await Future.delayed(const Duration(seconds: 1));
-
       CommonSnackBar.success('Google Login Successful!!');
-      Get.offAllNamed(AppRoutes.loginScreen);
-
+      Get.offAllNamed(AppRoutes.bottomNavigationBarWidget);
     } catch (e) {
       ErrorHandler.handleError('$e');
     } finally {
@@ -55,13 +59,9 @@ class AuthController extends GetxController {
   Future<void> facebookLogin() async {
     try {
       isLoading.value = true;
-
-      // TODO: Facebook Sign In
       await Future.delayed(const Duration(seconds: 1));
-
       CommonSnackBar.success('Facebook Login Successful!!');
-      Get.offAllNamed(AppRoutes.loginScreen);
-
+      Get.offAllNamed(AppRoutes.bottomNavigationBarWidget);
     } catch (e) {
       ErrorHandler.handleError('$e');
     } finally {

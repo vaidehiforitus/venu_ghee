@@ -15,6 +15,7 @@ class ColorConstants {
   static Color inProgressColor = const Color(0xffFDE9E9);
   static Color closeColor = const Color(0xffF3F4F6);
   static Color lightBlueColor = const Color(0xffF3F7FF);
+  static Color bgColor = const Color(0xffF5F7FA);
 
 
 

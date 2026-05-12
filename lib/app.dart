@@ -18,9 +18,9 @@ class MyApp extends StatelessWidget {
           builder: (controller) {
             return GetMaterialApp(
               debugShowCheckedModeBanner: false,
-              // home: GroupChatScreen(),
+              // super_admin: GroupChatScreen(),
               getPages: AppPages.routes,
-              initialRoute: AppRoutes.bottomNavigationBarWidget,
+              initialRoute: AppRoutes.loginScreen,
               theme: AppThemes.lightTheme,
               darkTheme: AppThemes.darkTheme,
               themeMode: controller.themeMode,

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:venu_ghee/core/constants/color_constants.dart';
 import 'package:venu_ghee/core/theme/theme_helper.dart';
+import 'package:venu_ghee/core/utils/widgets/responsive_helper/responsive_helper.dart';
 
 class TextFormFieldWidget extends StatefulWidget {
   final String? labelText;
@@ -102,9 +103,11 @@ class _TextFormFieldWidgetState extends State<TextFormFieldWidget> {
       onChanged: widget.onChanged,
       onFieldSubmitted: widget.onFieldSubmitted,
       style: TextStyle(
-        fontSize: widget.fontSize ?? 14.sp,
+        // fontSize: widget.fontSize ?? 14.sp,
+        fontSize: widget.fontSize ??
+            adaptiveFont(context, 14),
         fontWeight: widget.fontWeight ?? FontWeight.w400,
-        color: widget.textColor ?? ThemeHelper.textColor(),
+        color: widget.textColor ?? ColorConstants.textColor,
       ),
       decoration: InputDecoration(
         labelText: widget.labelText,
@@ -113,23 +116,46 @@ class _TextFormFieldWidgetState extends State<TextFormFieldWidget> {
         fillColor: widget.fillColor ?? ThemeHelper.textColor(),
         counterText: '',
         labelStyle: TextStyle(
-          fontSize: 13.sp,
+          // fontSize: 13.sp,
+          fontSize: adaptiveFont(context, 16),
           fontWeight: FontWeight.w500,
           color: widget.labelColor ?? ThemeHelper.textColor(),
         ),
         hintStyle: TextStyle(
-          fontSize: 14.sp,
+          // fontSize: 14.sp,
+          fontSize: adaptiveFont(context, 16),
           color: widget.hintColor ?? ColorConstants.lightTextColor,
         ),
+        // contentPadding: widget.contentPadding ??
+        //     EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         contentPadding: widget.contentPadding ??
-            EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+            EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: MediaQuery.of(context).size.width < 600 ? 14 : 12,
+            ),
         prefixIcon: widget.prefixIcon,
+        // suffixIcon: isPassword
+        //     ? IconButton(
+        //   icon: Icon(
+        //     _obscureText ? Icons.visibility_off : Icons.visibility,
+        //     color: ColorConstants.lightTextColor,
+        //     size: 14.sp,
+        //   ),
+        //   onPressed: () {
+        //     setState(() {
+        //       _obscureText = !_obscureText;
+        //     });
+        //   },
+        // )
+        //     : widget.suffixIcon,
         suffixIcon: isPassword
             ? IconButton(
           icon: Icon(
-            _obscureText ? Icons.visibility_off : Icons.visibility,
+            _obscureText
+                ? Icons.visibility_off
+                : Icons.visibility,
             color: ColorConstants.lightTextColor,
-            size: 14.sp,
+            size: adaptiveFont(context, 14),
           ),
           onPressed: () {
             setState(() {
