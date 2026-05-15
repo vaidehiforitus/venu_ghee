@@ -10,6 +10,12 @@ class StorageConstants {
   static const String isLoggedIn = 'is_logged_in';
   static const String email = 'user_email';
   static const String profileImage = 'profile_image';
+  static const String branchId = 'branch_id';
+  static const String ownerName  = 'owner_name';
+  static const String branchName = 'branch_name';
+  static const String userImage  = 'user_image';
+  static const String mobileNumber = 'mobile_number';
+
 }
 
 

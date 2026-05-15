@@ -5,6 +5,8 @@ import 'package:venu_ghee/core/utils/widgets/responsive_helper/responsive_helper
 import 'package:venu_ghee/features/super_admin/presentation/controller/branch_controller.dart';
 import 'package:venu_ghee/features/super_admin/presentation/screens/branch/add_payment_screen.dart';
 import 'package:venu_ghee/features/super_admin/presentation/widget/adaptive_scaffold.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
 
 class AddBranchScreen extends StatelessWidget {
   AddBranchScreen({super.key});
@@ -138,6 +140,12 @@ class _BranchFormCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _ImageUploadBox(
+              isMobile: isMobile,
+              controller: controller,
+            ),
+
+            SizedBox(height: isMobile ? 20.h : 20),
             _rowOrColumn(
               isMobile: isMobile,
               left: _field(
@@ -341,7 +349,7 @@ class _BranchFormCard extends StatelessWidget {
 
             SizedBox(height: isMobile ? 16.h : 16),
 
-            _ImageUploadBox(isMobile: isMobile, controller: controller),
+            // _ImageUploadBox(isMobile: isMobile, controller: controller),
 
             if (isMobile) ...[
               SizedBox(height: 24.h),
@@ -471,7 +479,8 @@ class _ImageUploadBox extends StatelessWidget {
           SizedBox(height: isMobile ? 6.h : 6),
 
           GestureDetector(
-            onTap: _pickImage,
+            onTap: controller.pickImage,
+            // onTap: _pickImage,
             child: Container(
               height: isMobile ? 120.h : 120,
               width: double.infinity,
@@ -491,12 +500,29 @@ class _ImageUploadBox extends StatelessWidget {
                   ClipRRect(
                     borderRadius:
                     BorderRadius.circular(isMobile ? 12.r : 12),
-                    child: Image.file(
+                    child:
+                    // kIsWeb
+                    //     ? Image.network(
+                    kIsWeb && controller.selectedImageBytes.value != null
+                        ? Image.memory(
+                      // controller.selectedImagePath.value,
+                      controller.selectedImageBytes.value!,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                    )
+                        : Image.file(
                       File(controller.selectedImagePath.value),
                       width: double.infinity,
                       height: double.infinity,
                       fit: BoxFit.cover,
                     ),
+                    // Image.file(
+                    //   File(controller.selectedImagePath.value),
+                    //   width: double.infinity,
+                    //   height: double.infinity,
+                    //   fit: BoxFit.cover,
+                    // ),
                   ),
                   ClipRRect(
                     borderRadius:

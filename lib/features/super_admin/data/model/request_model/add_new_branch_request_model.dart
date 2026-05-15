@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'package:dio/dio.dart';
+import 'package:venu_ghee/core/utils/exports/common_exports.dart';
+
 class AddNewBranchRequestModel {
   String? image;
   String? branchName;
@@ -68,6 +72,50 @@ class AddNewBranchRequestModel {
           initialStocks!.map((v) => v.toJson()).toList();
     }
     return data;
+  }
+  Future<FormData> toFormData({Uint8List? imageBytes}) async {
+    final Map<String, dynamic> formMap = {};
+
+    if (branchName != null) formMap['Branch_name'] = branchName;
+    if (address != null) formMap['address'] = address;
+    if (state != null) formMap['state'] = state;
+    if (zipCode != null) formMap['zip_code'] = zipCode.toString();
+    if (mobileNumber != null) formMap['Mobile_number'] = mobileNumber;
+    if (ownerName != null) formMap['owner_name'] = ownerName;
+    if (email != null) formMap['email'] = email;
+    if (password != null) formMap['password'] = password;
+    if (accountNumber != null) formMap['account_number'] = accountNumber;
+    if (ifscCode != null) formMap['ifsc_code'] = ifscCode;
+    if (bankName != null) formMap['bank_name'] = bankName;
+
+    if (kIsWeb) {
+      if (imageBytes != null) {
+        final filename = image != null && image!.isNotEmpty
+            ? image!.split('/').last
+            : 'branch_image.jpg';
+        formMap['image'] = MultipartFile.fromBytes(
+          imageBytes,
+          filename: filename,
+        );
+      }
+    } else {
+      if (image != null && image!.isNotEmpty) {
+        formMap['image'] = await MultipartFile.fromFile(
+          image!,
+          filename: image!.split('/').last,
+        );
+      }
+    }
+
+    if (initialStocks != null && initialStocks!.isNotEmpty) {
+      formMap['initial_stocks'] = jsonEncode(
+        initialStocks!.map((e) => e.toJson()).toList(),
+      );
+    } else {
+      formMap['initial_stocks'] = '[]';
+    }
+
+    return FormData.fromMap(formMap);
   }
 }
 

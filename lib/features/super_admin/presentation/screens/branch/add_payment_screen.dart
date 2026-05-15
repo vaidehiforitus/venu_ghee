@@ -5,13 +5,6 @@ import 'package:venu_ghee/features/super_admin/presentation/controller/branch_co
 import 'package:venu_ghee/features/super_admin/presentation/screens/branch/branch_add_product_screen.dart';
 import 'package:venu_ghee/features/super_admin/presentation/widget/adaptive_scaffold.dart';
 
-// double adaptiveFont(BuildContext context, double size) {
-//   final w = MediaQuery.of(context).size.width;
-//   if (w < 600) return size;
-//   if (w < 1024) return size * 0.90;
-//   return size * 0.80;
-// }
-
 class AddPaymentScreen extends StatelessWidget {
   AddPaymentScreen({super.key});
 

@@ -1,23 +1,34 @@
 import 'package:get/get.dart';
 import 'package:venu_ghee/core/utils/exports/common_exports.dart';
+import 'package:venu_ghee/features/branch_admin/presentation/controller/branch_inventory_controller.dart';
+import 'package:venu_ghee/features/branch_admin/presentation/controller/branch_sell_controller.dart';
+import 'package:venu_ghee/features/branch_admin/presentation/controller/branch_sell_history_controller.dart';
 import 'package:venu_ghee/features/branch_admin/presentation/screen/branch_dashboard_screen.dart';
 import 'package:venu_ghee/features/branch_admin/presentation/screen/branch_inventory_screen.dart';
 import 'package:venu_ghee/features/branch_admin/presentation/screen/branch_sell_history_screen.dart';
 import 'package:venu_ghee/features/branch_admin/presentation/screen/branch_sell_screen.dart';
 import 'package:venu_ghee/features/super_admin/presentation/screens/profile_screen.dart';
 
-class BranchAdminBottomNavigationBar extends StatelessWidget {
+class   BranchAdminBottomNavigationBar extends StatelessWidget {
   BranchAdminBottomNavigationBar({super.key});
 
   final BranchAdminController controller = Get.put(BranchAdminController());
 
-  final List<Widget> _screens = [
+  final List<Widget> _mobileScreens  = [
     BranchDashboardScreen(),
     InventoryScreen(),
     BranchSellScreen(),
     SellHistoryScreen(),
+    ProfileScreen(),
   ];
-
+  final List<Widget> _allScreens = [
+    BranchDashboardScreen(),
+    InventoryScreen(),
+    BranchSellScreen(),
+    SellHistoryScreen(),
+    ProfileScreen(),
+    ProfileScreen(),
+  ];
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -26,7 +37,10 @@ class BranchAdminBottomNavigationBar extends StatelessWidget {
     return Obx(
           () => Scaffold(
         backgroundColor: ColorConstants.primaryColor,
-        body: _screens[controller.currentIndex.value],
+            body: isWeb
+                ? _allScreens[controller.currentIndex.value]
+                : _mobileScreens[controller.mobileIndex.value],
+        // body: _screens[controller.currentIndex.value],
         bottomNavigationBar: isWeb ? null : _BottomNavBar(controller: controller),
       ),
     );
@@ -50,36 +64,42 @@ class _BottomNavBar extends StatelessWidget {
         child: SafeArea(
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 8.h),
-            child: Row(
+            child:Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _NavItem(
                   icon: ImageConstants.dashboardIcon,
                   label: 'Dashboard',
                   index: 0,
-                  currentIndex: controller.currentIndex.value,
-                  onTap: () => controller.changeIndex(0),
+                  currentIndex: controller.mobileIndex.value,
+                  onTap: () => controller.changeMobileIndex(0),
                 ),
                 _NavItem(
                   icon: ImageConstants.branchIcon,
-                  label: 'Branch',
+                  label: 'Inventory',
                   index: 1,
-                  currentIndex: controller.currentIndex.value,
-                  onTap: () => controller.changeIndex(1),
+                  currentIndex: controller.mobileIndex.value,
+                  onTap: () => controller.changeMobileIndex(1),
                 ),
                 _NavItem(
-                  icon: ImageConstants.productIcon,
-                  label: 'Product',
+                  icon: ImageConstants.historyIcon,
+                  label: 'Sell',
                   index: 2,
-                  currentIndex: controller.currentIndex.value,
-                  onTap: () => controller.changeIndex(2),
+                  currentIndex: controller.mobileIndex.value,
+                  onTap: () => controller.changeMobileIndex(2),
                 ),
                 _NavItem(
+                  icon: ImageConstants.historyIcon,
+                  label: 'History',
+                  index: 3,
+                  currentIndex: controller.mobileIndex.value,
+                  onTap: () => controller.changeMobileIndex(3),
+                ), _NavItem(
                   icon: ImageConstants.profileIcon,
                   label: 'Profile',
-                  index: 3,
-                  currentIndex: controller.currentIndex.value,
-                  onTap: () => controller.changeIndex(3),
+                  index: 4,
+                  currentIndex: controller.mobileIndex.value,
+                  onTap: () => controller.changeMobileIndex(4),
                 ),
               ],
             ),
@@ -91,7 +111,7 @@ class _BottomNavBar extends StatelessWidget {
 }
 
 class _NavItem extends StatelessWidget {
-  final String icon;        // ← IconData થી String
+  final String icon;
   final String label;
   final int index;
   final int currentIndex;
@@ -143,13 +163,12 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
+
 class BranchAdminController extends GetxController {
   final RxInt currentIndex = 0.obs;
+  final RxInt mobileIndex  = 0.obs;
 
-  void changeIndex(int index) {
-    currentIndex.value = index;
-  }
-  final List<Widget> pages = [
+  List<Widget> get pages => [
     BranchDashboardScreen(),
     InventoryScreen(),
     BranchSellScreen(),
@@ -157,4 +176,53 @@ class BranchAdminController extends GetxController {
     ProfileScreen(),
     ProfileScreen(),
   ];
+
+  void changeIndex(int index) {
+    currentIndex.value = index;
+    _refreshOnTabChange(index);
+  }
+
+  void changeMobileIndex(int index) {
+    mobileIndex.value = index;
+    _refreshOnTabChange(index);
+  }
+
+  void _refreshOnTabChange(int index) {
+    switch (index) {
+      case 1:
+        if (Get.isRegistered<InventoryController>()) {
+          Get.find<InventoryController>().fetchInventory();
+        }
+        break;
+      case 2:
+        if (Get.isRegistered<SellController>()) {
+          Get.find<SellController>().fetchProducts();
+        }
+        break;
+      case 3:
+        if (Get.isRegistered<SellHistoryController>()) {
+          Get.find<SellHistoryController>().fetchSellHistory();
+        }
+        break;
+    }
+  }
 }
+// class BranchAdminController extends GetxController {
+//   final RxInt currentIndex = 0.obs;
+//   final RxInt mobileIndex  = 0.obs;
+//
+//   void changeIndex(int index) {
+//     currentIndex.value = index;
+//   }
+//   void changeMobileIndex(int index) {
+//     mobileIndex.value = index;
+//   }
+//   final List<Widget> pages = [
+//     BranchDashboardScreen(),
+//     InventoryScreen(),
+//     BranchSellScreen(),
+//     SellHistoryScreen(),
+//     ProfileScreen(),
+//     ProfileScreen(),
+//   ];
+// }

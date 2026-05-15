@@ -46,22 +46,22 @@ class _MobileInventoryLayout extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: ColorConstants.redColor,
                   ),
-                  Row(
-                    children: [
-                      _SortFilterChip(
-                        label: 'Sort by: Due Date',
-                        onTap: () {},
-                        isMobile: true,
-                      ),
-                      SizedBox(width: 8.w),
-                      _SortFilterChip(
-                        label: 'Filter',
-                        onTap: () {},
-                        isMobile: true,
-                        isFilter: true,
-                      ),
-                    ],
-                  ),
+                  // Row(
+                  //   children: [
+                  //     _SortFilterChip(
+                  //       label: 'Sort by: Due Date',
+                  //       onTap: () {},
+                  //       isMobile: true,
+                  //     ),
+                  //     SizedBox(width: 8.w),
+                  //     _SortFilterChip(
+                  //       label: 'Filter',
+                  //       onTap: () {},
+                  //       isMobile: true,
+                  //       isFilter: true,
+                  //     ),
+                  //   ],
+                  // ),
                 ],
               ),
             ),
@@ -168,7 +168,27 @@ class _InventoryCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(isMobile ? 8.r : 8),
-            child: Image.asset(
+            // child: Image.asset(
+            //   item.image,
+            //   height: isMobile ? 52.h : 60,
+            //   width: isMobile ? 52.w : 60,
+            //   fit: BoxFit.cover,
+            // ),
+            // ClipRRect child replace karo
+            child: item.image.startsWith('http')
+                ? Image.network(
+              item.image,
+              height: isMobile ? 52.h : 60,
+              width: isMobile ? 52.w : 60,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Image.asset(
+                ImageConstants.productIcon,
+                height: isMobile ? 52.h : 60,
+                width: isMobile ? 52.w : 60,
+                fit: BoxFit.cover,
+              ),
+            )
+                : Image.asset(
               item.image,
               height: isMobile ? 52.h : 60,
               width: isMobile ? 52.w : 60,

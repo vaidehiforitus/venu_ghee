@@ -1,5 +1,8 @@
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:venu_ghee/core/constants/storage_constants.dart';
 import 'package:venu_ghee/core/utils/exports/common_exports.dart';
+import 'package:venu_ghee/features/branch_admin/data/repositories/admin_repo.dart';
 
 class InventoryItem {
   final String id;
@@ -27,6 +30,9 @@ class InventoryController extends GetxController {
   final RxString sortBy = 'Due Date'.obs;
   final RxString filterBy = 'Filter'.obs;
 
+  final BranchAdminRepo _repository = BranchAdminRepo();
+  final _box = GetStorage();
+
   @override
   void onInit() {
     super.onInit();
@@ -36,19 +42,28 @@ class InventoryController extends GetxController {
   Future<void> fetchInventory() async {
     try {
       isLoading.value = true;
-      await Future.delayed(const Duration(milliseconds: 800));
-      items.value = List.generate(
-        6,
-            (i) => InventoryItem(
-          id: '$i',
-          name: 'A2 Cow Pure Desi Ghee',
-          pack: 'L Premium Pack',
-          inStock: 96,
-          value: '₹1,24,000',
-          mrp: '₹1200',
-          image: ImageConstants.productIcon,
-        ),
-      );
+
+      final branchId = _box.read<int>(StorageConstants.branchId) ?? 4;
+      final result = await _repository.getStocksByBranch(branchId);
+
+      final baseUrl = 'http://192.168.1.4:8000'; // apna base URL
+
+      items.value = (result.stocks ?? []).map((s) {
+        final totalValue = (s.price ?? 0) * (s.quantity ?? 0);
+
+        return InventoryItem(
+          id: s.productId?.toString() ?? '',
+          name: s.productName ?? '',
+          pack: '',
+          inStock: s.quantity ?? 0,
+          value: '₹${totalValue.toStringAsFixed(0)}',
+          mrp: '₹${s.price?.toStringAsFixed(0) ?? '0'}',
+          image: (s.image != null && s.image!.isNotEmpty)
+              ? '$baseUrl${s.image}'
+              : ImageConstants.productIcon,
+        );
+      }).toList();
+
     } catch (e) {
       ErrorHandler.handleError('$e');
     } finally {

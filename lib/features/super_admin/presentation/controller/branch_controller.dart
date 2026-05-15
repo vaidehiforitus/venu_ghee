@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:venu_ghee/core/config/app_config.dart';
 import 'package:venu_ghee/core/utils/exports/common_exports.dart';
 import 'package:venu_ghee/features/super_admin/data/model/request_model/add_new_branch_request_model.dart';
 import 'package:venu_ghee/features/super_admin/data/model/response_model/get_branch_details_response_model.dart';
@@ -30,8 +31,8 @@ class BranchController extends GetxController {
   final RxList<ProductModel> productList = <ProductModel>[].obs;
   final RxList<int> quantities = <int>[].obs;
 
-  // Store selected branch image path
   final RxString selectedImagePath = ''.obs;
+  final Rx<Uint8List?> selectedImageBytes = Rx<Uint8List?>(null);
 
   final SuperAdminRepo _repository = SuperAdminRepo();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -44,22 +45,20 @@ class BranchController extends GetxController {
 
   @override
   void onClose() {
-    nameController.dispose();
-    ownerController.dispose();
-    phoneController.dispose();
-    addressController.dispose();
-    stateController.dispose();
-    zipController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    bankNameController.dispose();
-    accountNoController.dispose();
-    ifscController.dispose();
+    // nameController.dispose();
+    // ownerController.dispose();
+    // phoneController.dispose();
+    // addressController.dispose();
+    // stateController.dispose();
+    // zipController.dispose();
+    // emailController.dispose();
+    // passwordController.dispose();
+    // confirmPasswordController.dispose();
+    // bankNameController.dispose();
+    // accountNoController.dispose();
+    // ifscController.dispose();
     super.onClose();
   }
-
-  // ─── FETCH ───────────────────────────────────────────────────────────────────
 
   Future<void> fetchBranches() async {
     try {
@@ -74,18 +73,23 @@ class BranchController extends GetxController {
     }
   }
 
-  // ─── SET EDIT DATA ────────────────────────────────────────────────────────────
 
   void setEditData(Branches branch) {
-    nameController.text = branch.branchName ?? '';   // name → branchName
+    nameController.text = branch.branchName ?? '';
     ownerController.text = branch.ownerName ?? '';
-    phoneController.text = branch.mobileNumber ?? ''; // number → mobileNumber
+    phoneController.text = branch.mobileNumber ?? '';
     emailController.text = branch.email ?? '';
-    addressController.text = branch.address ?? '';   // location → address
+    addressController.text = branch.address ?? '';
+    stateController.text = branch.state ?? '';
+    zipController.text = branch.zipCode?.toString() ?? '';
     bankNameController.text = branch.bankName ?? '';
     accountNoController.text = branch.accountNumber ?? '';
     ifscController.text = branch.ifscCode ?? '';
     isActive.value = branch.isOpen ?? true;
+    selectedImagePath.value = branch.image != null
+        ? '${AppConfig.apiBaseUrl}${branch.image}'
+        : '';
+    selectedImageBytes.value = null;
   }
 
   Future<void> pickImage() async {
@@ -97,13 +101,15 @@ class BranchController extends GetxController {
       );
       if (picked != null) {
         selectedImagePath.value = picked.path;
+        if (kIsWeb) {
+          selectedImageBytes.value = await picked.readAsBytes();
+        }
       }
     } catch (e) {
       ErrorHandler.handleError('Image pick failed: $e');
     }
   }
 
-// Validation method add karo:
   bool validateBranchForm() {
     if (selectedImagePath.value.isEmpty) {
       CommonSnackBar.error('Please upload a branch image');
@@ -128,10 +134,10 @@ class BranchController extends GetxController {
         accountNumber: accountNoController.text.trim(),
         ifscCode: ifscController.text.trim(),
         bankName: bankNameController.text.trim(),
-        // initialStocks are added in saveBranchWithProducts()
       );
 
-      final result = await _repository.addNewBranch(request: request);
+      final result = await _repository.addNewBranch(request: request,  imageBytes: kIsWeb ? selectedImageBytes.value : null, // ✅ આ add કરો
+      );
 
       if (result.status == 200 || result.status == 201) {
         _clearForm();
@@ -149,8 +155,6 @@ class BranchController extends GetxController {
     }
   }
 
-  // ─── EDIT BRANCH ──────────────────────────────────────────────────────────────
-
   Future<void> updateBranch(int? id) async {
     if (id == null) {
       ErrorHandler.handleError('Branch ID is missing');
@@ -159,7 +163,30 @@ class BranchController extends GetxController {
     try {
       isSubmitting.value = true;
 
-      final result = await _repository.editBranch(id: id.toString());
+      final request = AddNewBranchRequestModel(
+        image: (selectedImagePath.value.isNotEmpty &&
+            !selectedImagePath.value.startsWith('http'))
+            ? selectedImagePath.value
+            : null,
+        // image: selectedImagePath.value.isNotEmpty ? selectedImagePath.value : null,
+        branchName: nameController.text.trim(),
+        address: addressController.text.trim(),
+        state: stateController.text.trim(),
+        zipCode: int.tryParse(zipController.text.trim()),
+        mobileNumber: phoneController.text.trim(),
+        ownerName: ownerController.text.trim(),
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+        accountNumber: accountNoController.text.trim(),
+        ifscCode: ifscController.text.trim(),
+        bankName: bankNameController.text.trim(),
+      );
+
+      final result = await _repository.editBranch(
+        id: id.toString(),
+        request: request,
+        imageBytes: kIsWeb ? selectedImageBytes.value : null,
+      );
 
       if (result.status == 200 || result.status == 201) {
         _clearForm();
@@ -170,15 +197,11 @@ class BranchController extends GetxController {
         ErrorHandler.handleError(result.message ?? 'Something went wrong');
       }
     } catch (e) {
-      print("updateerrorr---$e");
-
       ErrorHandler.handleError('$e');
     } finally {
       isSubmitting.value = false;
     }
   }
-
-  // ─── DELETE BRANCH ────────────────────────────────────────────────────────────
 
   Future<void> deleteBranch(int? id) async {
     if (id == null) {
@@ -186,7 +209,6 @@ class BranchController extends GetxController {
       return;
     }
     try {
-      // Show confirmation dialog first
       final confirmed = await Get.dialog<bool>(
         AlertDialog(
           title: const Text('Delete Branch'),
@@ -227,9 +249,6 @@ class BranchController extends GetxController {
       isLoading.value = false;
     }
   }
-
-  // ─── PRODUCTS ─────────────────────────────────────────────────────────────────
-
   Future<void> fetchProducts() async {
     try {
       final result = await _repository.getProductBranchList();
@@ -257,13 +276,10 @@ class BranchController extends GetxController {
     if (quantities[index] > 0) quantities[index]--;
   }
 
-  // ─── SAVE BRANCH WITH PRODUCTS ────────────────────────────────────────────────
-
   Future<void> saveBranchWithProducts() async {
     try {
       isSubmitting.value = true;
 
-      // Build initial stocks from product list + quantities
       final stocks = productList.asMap().entries.map((entry) {
         return InitialStocks(
           productId: entry.value.id,
@@ -287,7 +303,16 @@ class BranchController extends GetxController {
         initialStocks: stocks,
       );
 
-      final result = await _repository.addNewBranch(request: request);
+      final formData = await request.toFormData(
+        imageBytes: kIsWeb ? selectedImageBytes.value : null,
+      );
+      print("FormData fields: ${formData.fields}");
+      print("FormData files: ${formData.files.map((f) => f.key).toList()}");
+
+      final result = await _repository.addNewBranch(
+        request: request,
+        imageBytes: kIsWeb ? selectedImageBytes.value : null,
+      );
 
       if (result.status == 200 || result.status == 201) {
         _clearForm();
@@ -297,13 +322,12 @@ class BranchController extends GetxController {
         ErrorHandler.handleError(result.message ?? 'Something went wrong');
       }
     } catch (e) {
+      print("saveBranchWithProducts error: $e");
       ErrorHandler.handleError('$e');
     } finally {
       isSubmitting.value = false;
     }
   }
-
-  // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
   void _clearForm() {
     nameController.clear();
@@ -320,5 +344,6 @@ class BranchController extends GetxController {
     ifscController.clear();
     selectedImagePath.value = '';
     isActive.value = true;
+    selectedImageBytes.value = null;
   }
 }

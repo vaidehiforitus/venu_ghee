@@ -224,9 +224,7 @@ class _ProductCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.vertical(top: Radius.circular(12.r)),
             child: Image.network(
-              "${product.image}",
-
-              // product.image ?? '',
+              "${AppConfig.apiBaseUrl}${product.image}",
               height: 110.h,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -309,9 +307,7 @@ class _DesktopProductCard extends StatelessWidget {
               borderRadius:
               const BorderRadius.vertical(top: Radius.circular(12)),
               child: Image.network(
-                "${product.image}",
-
-                // product.image ?? '',
+                "${AppConfig.apiBaseUrl}${product.image}",
                 width: double.infinity,
                 fit: BoxFit.cover,
               ),

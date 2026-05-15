@@ -13,7 +13,7 @@ class ImageConstants {
   static const String webBg = '${imagePath}web_bg.png';
   static const String cowBg = '${imagePath}cow_bg.png';
   // image_constants.dart ma add karo
-  static const String historyIcon  = 'assets/icons/history_icon.png';
+  static const String historyIcon  = '${imagePath}sell_icon.png';
   static const String customerIcon = 'assets/icons/customer_icon.png';
   static const String inquiryIcon  = 'assets/icons/inquiry_icon.png';
 

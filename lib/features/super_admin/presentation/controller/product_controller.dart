@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 import 'package:venu_ghee/core/utils/exports/common_exports.dart';
+import 'package:venu_ghee/features/super_admin/data/model/request_model/add_product_request_model.dart';
 import 'package:venu_ghee/features/super_admin/data/model/response_model/get_product_branch_list_response_model.dart';
 import 'package:venu_ghee/features/super_admin/data/repositories/super_admin_repo.dart';
 
@@ -13,7 +16,11 @@ class ProductController extends GetxController {
   final RxBool isSubmitting = false.obs;
   final RxList<ProductModel> productList = <ProductModel>[].obs;
   final RxString selectedUnit = ''.obs;
+
   final Rx<File?> selectedImage = Rx<File?>(null);
+  final RxString selectedImagePath = ''.obs;
+  final Rx<Uint8List?> selectedImageBytes = Rx<Uint8List?>(null);
+
   final SuperAdminRepo _repository = SuperAdminRepo();
 
   @override
@@ -33,47 +40,76 @@ class ProductController extends GetxController {
   Future<void> fetchProducts() async {
     try {
       isLoading.value = true;
-
       final result = await _repository.getProductBranchList();
-
       productList.value = result.products ?? [];
-
     } catch (e) {
       ErrorHandler.handleError('$e');
     } finally {
       isLoading.value = false;
     }
   }
+
   Future<void> pickImage() async {
     try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
-        selectedImage.value = File(image.path);
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+      if (picked != null) {
+        selectedImagePath.value = picked.path;
+        if (kIsWeb) {
+          selectedImageBytes.value = await picked.readAsBytes();
+          selectedImage.value = null;
+        } else {
+          selectedImage.value = File(picked.path);
+          selectedImageBytes.value = null;
+        }
       }
     } catch (e) {
-      ErrorHandler.handleError('$e');
+      ErrorHandler.handleError('Image pick failed: $e');
     }
   }
 
   void setEditData(ProductModel product) {
     nameController.text = product.name ?? '';
     priceController.text = product.price?.toString() ?? '';
-
     unitValueController.text = product.weightVolume?.toString() ?? '';
-    selectedUnit.value = product.unitType ?? '';
+    selectedUnit.value = (product.unitType ?? '').toUpperCase(); // ← bas aa
+    selectedImage.value = null;
+    selectedImagePath.value = '';
+    selectedImageBytes.value = null;
   }
 
   Future<void> addProduct() async {
     try {
       isSubmitting.value = true;
-      await Future.delayed(const Duration(seconds: 1));
 
-      _clearForm();
-      Get.back();
-      CommonSnackBar.success('Product added successfully!');
-      fetchProducts();
+      final request = AddProductRequestModel(
+        name: nameController.text.trim(),
+        price: double.tryParse(priceController.text.trim()),
+        unitType: selectedUnit.value,
+        weightVolume: double.tryParse(unitValueController.text.trim()),
+        image: selectedImagePath.value.isNotEmpty
+            ? selectedImagePath.value
+            : null,
+      );
+
+      final result = await _repository.addProduct(
+        request: request,
+        imageBytes: kIsWeb ? selectedImageBytes.value : null,
+      );
+
+      if (result.status == 200 || result.status == 201) {
+        _clearForm();
+        Get.back();
+        CommonSnackBar.success(result.message ?? 'Product added successfully!');
+        fetchProducts();
+      } else {
+        ErrorHandler.handleError(result.message ?? 'Something went wrong');
+      }
     } catch (e) {
+      print("addProduct error: $e");
       ErrorHandler.handleError('$e');
     } finally {
       isSubmitting.value = false;
@@ -83,13 +119,34 @@ class ProductController extends GetxController {
   Future<void> updateProduct(String id) async {
     try {
       isSubmitting.value = true;
-      await Future.delayed(const Duration(seconds: 1));
 
-      _clearForm();
-      Get.back();
-      CommonSnackBar.success('Product updated successfully!');
-      fetchProducts();
+      final request = AddProductRequestModel(
+        name: nameController.text.trim(),
+        price: double.tryParse(priceController.text.trim()),
+        unitType: selectedUnit.value,
+        weightVolume: double.tryParse(unitValueController.text.trim()),
+        image: selectedImagePath.value.isNotEmpty
+            ? selectedImagePath.value
+            : null,
+      );
+
+      final result = await _repository.updateProduct(
+        id: id,
+        request: request,
+        imageBytes: kIsWeb ? selectedImageBytes.value : null,
+      );
+
+      if (result.status == 200 || result.status == 201) {
+        _clearForm();
+        Get.back();
+        CommonSnackBar.success(
+            result.message ?? 'Product updated successfully!');
+        fetchProducts();
+      } else {
+        ErrorHandler.handleError(result.message ?? 'Something went wrong');
+      }
     } catch (e) {
+      print("updateProduct error: $e");
       ErrorHandler.handleError('$e');
     } finally {
       isSubmitting.value = false;
@@ -98,11 +155,45 @@ class ProductController extends GetxController {
 
   Future<void> deleteProduct(String id) async {
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      productList.removeWhere((p) => p.id == id);
-      CommonSnackBar.success('Product deleted successfully!');
+      final confirmed = await Get.dialog<bool>(
+        AlertDialog(
+          title: const Text('Delete Product'),
+          content:
+          const Text('Are you sure you want to delete this product?'),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Get.back(result: true),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: ColorConstants.redColor),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+
+      isLoading.value = true;
+
+      final result = await _repository.deleteProduct(id: id);
+
+      if (result.status == 200 || result.status == 201) {
+        CommonSnackBar.success(
+            result.message ?? 'Product deleted successfully!');
+        fetchProducts();
+      } else {
+        ErrorHandler.handleError(result.message ?? 'Something went wrong');
+      }
     } catch (e) {
+      print("deleteProduct error: $e");
       ErrorHandler.handleError('$e');
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -112,5 +203,7 @@ class ProductController extends GetxController {
     unitValueController.clear();
     selectedUnit.value = '';
     selectedImage.value = null;
+    selectedImagePath.value = '';
+    selectedImageBytes.value = null;
   }
 }
